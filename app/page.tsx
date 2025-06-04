@@ -2,11 +2,6 @@
 
 import ProductCard from "@/components/shop/ProductCard";
 
-
-
-import { products } from "@/data";
-
-
 import { products as initialProducts } from "@/data";
 import { useEffect, useState } from "react";
 import Video from "../components/shop/Video";
@@ -58,7 +53,6 @@ export default function Home() {
     return <div>Loading...</div>;
   }
 
-
   return (
     <div className="min-h-screen overflow-hidden bg-gray-100 p-10 space-y-12">
       {/* Video-sektion med liten ikon */}
@@ -73,15 +67,18 @@ export default function Home() {
 
       {/* Product Cards Section */}
       <section className="flex flex-wrap justify-center gap-16 max-w-7xl mx-auto">
-        {products.map((product) => (
-
-        
-
-          <div key={product.id} className="bg-yellow-50 p-10">
-            
-            <ProductCard Product={product} />
-          </div>
-        ))}
+        {products.map((product) => {
+          // Ensure articleColorSize is always a string
+          const safeProduct = {
+            ...product,
+            articleColorSize: product.articleColorSize ?? "",
+          };
+          return (
+            <div key={product.id} className="bg-yellow-50 p-10">
+              <ProductCard Product={safeProduct} />
+            </div>
+          );
+        })}
       </section>
     </div>
   );
