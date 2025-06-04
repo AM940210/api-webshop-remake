@@ -2,36 +2,60 @@
 
 import { cn } from "@/lib/utils";
 import { Dancing_Script } from "next/font/google";
-
-const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  weight: ["400"], // Välj vilken vikt du vill (ex: 400 eller 700)
-});
-
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import ShoppingCart from "./ShoppingCart";
+import { authClient } from "@/lib/auth-client";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import Image from "next/image";
+
+const dancingScript = Dancing_Script({
+  subsets: ["latin"],
+  weight: ["400"],
+});
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const handleScroll = (): void => {
+    const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-
     window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setIsMounted(true);
+    const fetchSession = async () => {
+      const { data } = await authClient.getSession();
+      setSession(data);
     };
+    fetchSession();
   }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const handleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "github",
+      callbackURL: "/",
+    });
+  };
+
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    setSession(null);
+  };
+
+  if (!isMounted) return null;
 
   return (
     <header
@@ -55,31 +79,10 @@ const Header = () => {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-8">
-          <Link
-            href="/"
-            className="text-foreground/80 hover:text-foreground transition-colors duration-200"
-          >
-            Home
-          </Link>
-          <Link
-            data-cy="admin-link"
-            href="/admin"
-            className="text-foreground/80 hover:text-foreground transition-colors duration-200"
-          >
-            Admin
-          </Link>
-          <Link
-            href="/not-found"
-            className="text-foreground/80 hover:text-foreground transition-colors duration-200"
-          >
-            Contact
-          </Link>
-          <Link
-            href="/not-found"
-            className="text-foreground/80 hover:text-foreground transition-colors duration-200"
-          >
-            About
-          </Link>
+          <Link href="/" className="text-foreground/80 hover:text-foreground">Home</Link>
+          <Link data-cy="admin-link" href="/admin" className="text-foreground/80 hover:text-foreground">Admin</Link>
+          <Link href="/not-found" className="text-foreground/80 hover:text-foreground">Contact</Link>
+          <Link href="/not-found" className="text-foreground/80 hover:text-foreground">About</Link>
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -87,17 +90,51 @@ const Header = () => {
             <ShoppingCart />
           </Link>
 
+          {session ? (
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className="rounded-full w-9 h-9 overflow-hidden border border-gray-300 hover:ring-2 ring-primary transition"
+                  aria-label="Användarprofil"
+                >
+                  <Image
+                    src={session.user?.image ?? "/placeholder.png"}
+                    alt="Profilbild"
+                    width={36}
+                    height={36}
+                    className="object-cover w-full h-full"
+                  />
+                </button>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  align="end"
+                  sideOffset={8}
+                  className="z-50 w-32 bg-white dark:bg-background border rounded-md shadow-lg p-1 text-sm"
+                >
+                  <DropdownMenu.Item
+                    onClick={handleSignOut}
+                    className="w-full px-3 py-2 hover:bg-muted text-foreground rounded-md cursor-pointer transition-colors"
+                  >
+                    Logga ut
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          ) : (
+            <Button variant="default" onClick={handleSignIn}>
+              Logga in
+            </Button>
+          )}
+
           <Button
             variant="ghost"
             size="icon"
             className="md:hidden"
             onClick={toggleMobileMenu}
           >
-            {isMobileMenuOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
@@ -105,35 +142,10 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-lg shadow-lg animate-fade-in">
           <nav className="container mx-auto px-4 py-6 flex flex-col space-y-4">
-            <Link
-              href="/"
-              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              data-cy="admin-link"
-              href="/admin"
-              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Admin
-            </Link>
-            <Link
-              href="/not-found"
-              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Contact
-            </Link>
-            <Link
-              href="/not-found"
-              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              About
-            </Link>
+            <Link href="/" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link href="/admin" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Admin</Link>
+            <Link href="/not-found" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
+            <Link href="/not-found" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
           </nav>
         </div>
       )}
