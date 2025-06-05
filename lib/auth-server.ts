@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "@prisma/client";
@@ -7,7 +6,7 @@ const prisma = new PrismaClient();
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "sqlite", // eller "postgresql", "mysql", beroende på din databas
+    provider: "sqlite", // eller "postgresql" eller "mysql"
   }),
   socialProviders: {
     github: {
@@ -15,5 +14,5 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     },
   },
-  trustedOrigins: ["http://localhost:3000"], // Anpassa efter din miljö
+  trustedOrigins: ["http://localhost:5173"],
 });

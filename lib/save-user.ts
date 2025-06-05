@@ -1,19 +1,20 @@
-import { prisma } from "@/lib/db";
+import { db } from "@/lib/db";
 
-export async function saveUserToDb(user: { name?: string; email?: string; image?: string }) {
-  if (!user.email) return;
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email: user.email },
+export async function saveUserToDb(user: {
+  id: string;
+  email: string;
+  name?: string;
+}) {
+  const existing = await db.user.findUnique({
+    where: { githubId: user.id },
   });
 
-  if (!existingUser) {
-    await prisma.user.create({
+  if (!existing) {
+    await db.user.create({
       data: {
-        name: user.name,
+        githubId: user.id,
         email: user.email,
-        image: user.image,
-        isAdmin: false, // default
+        name: user.name,
       },
     });
   }
