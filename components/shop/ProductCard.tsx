@@ -29,13 +29,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCartLink,
 }) => {
   return (
-    <Link
-      href={`/product/${Product.articleNumber}/${encodeURIComponent(
-        Product.title
-      )}`}
-      data-cy="product-link"
-      className="block"
-    >
+    
       <Card
         data-cy="product"
         className="w-72 h-[420px] relative overflow-hidden rounded-xl border border-gray-200 shadow-lg"
@@ -96,7 +90,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </CardOverlay>
       </Card>
-    </Link>
+
   );
 };
 

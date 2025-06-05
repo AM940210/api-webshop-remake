@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { AddToCartButton } from "@/components/ui/AddToCartButton";
 import { Button } from "@/components/ui/button";
 import { products as initialProducts } from "@/data";
@@ -7,13 +8,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-interface ProductDetailProps {
-  params: { id: string; title: string };
-}
+export default function ProductDetailPage({ params }: {params: Promise<{ id: string; title: string }> }) {
+  const { id, title } = React.use(params);
 
-export default function ProductDetailPage({ params }: ProductDetailProps) {
   const [product, setProduct] = useState(() =>
-    initialProducts.find((p) => p.articleNumber === params.id)
+    initialProducts.find((p) => p.articleNumber === id)
   );
 
   useEffect(() => {
@@ -22,7 +21,7 @@ export default function ProductDetailPage({ params }: ProductDetailProps) {
       if (storedProducts) {
         const products = JSON.parse(storedProducts);
         const foundProduct = products.find(
-          (p: any) => p.articleNumber === params.id
+          (p: any) => p.articleNumber === id
         );
         if (foundProduct) {
           setProduct(foundProduct);
@@ -31,7 +30,7 @@ export default function ProductDetailPage({ params }: ProductDetailProps) {
     } catch (error) {
       console.error("Failed to load product from localStorage:", error);
     }
-  }, [params.id]);
+  }, [id]);
 
   if (!product) {
     return <h1>Product not found</h1>;
@@ -89,7 +88,10 @@ export default function ProductDetailPage({ params }: ProductDetailProps) {
               <Link href="/">Back</Link>
             </Button>
             <AddToCartButton
-              product={product}
+              product={{
+                ...product,
+                articleColorSize: product.articleColorSize ?? ""
+              }}
               className="flex items-center justify-center px-4 py-1 bg-pink-400 hover:bg-pink-500 text-black rounded-full"
               data-cy="product-buy-button"
             >

@@ -2,9 +2,9 @@
 
 import ProductCard from "@/components/shop/ProductCard";
 import { products as initialProducts } from "@/data";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Video from "../components/shop/Video";
-import Link from "next/link";
 
 export default function Home() {
   const [products, setProducts] = useState(initialProducts);
@@ -54,11 +54,11 @@ export default function Home() {
   // Filtrera och sortera produkter
   // Make sure Product type has a 'name' property, or replace 'name' with the correct property
   const filteredProducts = products
-    .filter((p) => (p.name ?? "").toLowerCase().includes(filter.toLowerCase()))
-    .sort((a, b) => 
+    .filter((p) => (p.title ?? "").toLowerCase().includes(filter.toLowerCase()))
+    .sort((a, b) =>
       sortBy === "price"
         ? a.price - b.price
-        : (a.name ?? "").localeCompare(b.name ?? "")
+        : (a.title ?? "").localeCompare(b.title ?? "")
     );
 
   if (isLoading) {
@@ -79,16 +79,16 @@ export default function Home() {
 
       {/* Filter och sortering */}
       <div className="flex gap-4 mb-6">
-        <input 
+        <input
           type="text"
           placeholder="Sök produkt..."
           value={filter}
-          onChange={e => setFilter(e.target.value)}
-          className="border p-2" 
+          onChange={(e) => setFilter(e.target.value)}
+          className="border p-2"
         />
-        <select 
-          value="sortBy" 
-          onChange={e => setSortBy(e.target.value as "name" | "price")}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as "name" | "price")}
           className="border p-2"
         >
           <option value="name">Sortera: Name</option>
@@ -99,7 +99,6 @@ export default function Home() {
       {/* Product Cards Section */}
       <section className="flex flex-wrap justify-center gap-16 max-w-7xl mx-auto">
         {filteredProducts.map((product) => {
-          // Ensure articleColorSize is always a string
           const safeProduct = {
             ...product,
             articleColorSize: product.articleColorSize ?? "",
@@ -107,7 +106,9 @@ export default function Home() {
           return (
             <Link
               key={product.id}
-              href={'/products/${product.id}'}
+              href={`/product/${product.articleNumber}/${encodeURIComponent(
+                product.title
+              )}`}
               className="bg-yellow-50 p-10 block rounded hover:shadow-lg transition"
             >
               <ProductCard Product={safeProduct} />
