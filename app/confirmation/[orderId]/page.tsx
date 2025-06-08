@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { db } from "@/prisma/db";
+import { db } from "@/lib/db";
 import Link from "next/link";
 import React from "react";
 

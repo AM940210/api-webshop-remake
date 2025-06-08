@@ -45,3 +45,12 @@ model OrderItem {
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
+
+model User {
+  id      String  @id @default(cuid())
+  email   String  @unique
+  name    String?
+  image   String?
+  isAdmin Boolean @default(false)
+}
+
