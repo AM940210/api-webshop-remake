@@ -17,7 +17,7 @@ export default function Checkout() {
     phone: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>> & { form?: string }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,9 +94,28 @@ export default function Checkout() {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="border border-gray-300 p-8 rounded-lg shadow-lg w-96">
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <div className="w-full max-x-2xl p-10">
         <h1 className="text-3xl font-semibold text-center mb-4">Checkout</h1>
+        {items.length > 0 && (
+          <div className="mb-4">
+            <h2 className="font-semibold mb-2">Order summary</h2>
+            <ul className="text-sm mb-2">
+              {items.map((item) => (
+                <li key={item.id}>
+                  {item.title} x {item.quantity} - ${(item.price * item.quantity).toFixed(2)}
+                </li>
+              ))}
+            </ul>
+            <div className="font-bold">
+              Total: ${items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}
+            </div>
+          </div>
+        )}
+        {/* Lägg felmeddelande */}
+        {errors.form && (
+          <div className="mb-2 text-red-600 text-center">{errors.form}</div>
+        )}
         <form data-cy="customer-form" onSubmit={handleSubmit} className="mt-4">
           <Delivery
             formData={formData}
