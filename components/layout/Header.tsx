@@ -21,6 +21,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [session, setSession] = useState<any>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,10 +33,34 @@ const Header = () => {
 
   useEffect(() => {
     setIsMounted(true);
+
     const fetchSession = async () => {
       const { data } = await authClient.getSession();
       setSession(data);
+
+      if (data?.user?.email) {
+        // Spara användaren i databasen
+        try {
+          const res = await fetch("/api/save-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: data.user.name,
+              email: data.user.email,
+              image: data.user.image,
+            }),
+          });
+
+          const userData = await res.json();
+          if (userData?.isAdmin === true) {
+            setIsAdmin(true);
+          }
+        } catch (err) {
+          console.error("Kunde inte spara användaren:", err);
+        }
+      }
     };
+
     fetchSession();
   }, []);
 
@@ -53,6 +78,7 @@ const Header = () => {
   const handleSignOut = async () => {
     await authClient.signOut();
     setSession(null);
+    setIsAdmin(false);
   };
 
   if (!isMounted) return null;
@@ -80,7 +106,9 @@ const Header = () => {
 
         <nav className="hidden md:flex items-center space-x-8">
           <Link href="/" className="text-foreground/80 hover:text-foreground">Home</Link>
-          <Link data-cy="admin-link" href="/admin" className="text-foreground/80 hover:text-foreground">Admin</Link>
+          {isAdmin && (
+            <Link data-cy="admin-link" href="/admin" className="text-foreground/80 hover:text-foreground">Admin</Link>
+          )}
           <Link href="/not-found" className="text-foreground/80 hover:text-foreground">Contact</Link>
           <Link href="/not-found" className="text-foreground/80 hover:text-foreground">About</Link>
         </nav>
@@ -143,7 +171,9 @@ const Header = () => {
         <div className="md:hidden bg-background/95 backdrop-blur-lg shadow-lg animate-fade-in">
           <nav className="container mx-auto px-4 py-6 flex flex-col space-y-4">
             <Link href="/" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
-            <Link href="/admin" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Admin</Link>
+            {isAdmin && (
+              <Link href="/admin" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Admin</Link>
+            )}
             <Link href="/not-found" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
             <Link href="/not-found" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
           </nav>
