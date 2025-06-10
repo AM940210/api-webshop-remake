@@ -9,6 +9,11 @@ const Footer: React.FC = () => {
         color: 'white',
         textAlign: 'center',
         padding: '1rem',
+        position: 'sticky',
+        left: 0,
+        bottom: 0,
+        width: '100%',
+        zIndex: 50,
       }}
     >
       <p>Made with 🤍 by MAST group | © 2025</p>

@@ -114,9 +114,7 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center space-x-4">
-          <Link data-cy="cart-link" href="/checkout">
-            <ShoppingCart />
-          </Link>
+          <ShoppingCart />
 
           {session ? (
             <DropdownMenu.Root>
