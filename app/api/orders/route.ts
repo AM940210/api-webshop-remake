@@ -40,3 +40,25 @@ export async function POST(req: Request) {
     return new NextResponse("Failed to create order", { status: 500 });
   }
 }
+
+// Hämta alla ordrar för en kund (GET /api/orders?email=kund@mail.se)
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get("email");
+
+  if (!email) {
+    return new NextResponse("Missing email", { status: 400});
+  }
+
+  try {
+    const orders = await db.order.findMany({
+      where: { customerEmail: email },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(orders);
+  } catch (error) {
+    console.error("❌ Order creation failed:", error);
+    return new NextResponse("Failed to fetch orders", { status: 500});
+  }
+}
