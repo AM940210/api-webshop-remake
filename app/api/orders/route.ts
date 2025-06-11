@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getServerSession } from "better-auth/next-js";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -43,11 +45,11 @@ export async function POST(req: Request) {
 
 // Hämta alla ordrar för en kund (GET /api/orders?email=kund@mail.se)
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const email = searchParams.get("email");
+  const session = await getServerSession(auth, req);
+  const email = session?.user?.email;
 
   if (!email) {
-    return new NextResponse("Missing email", { status: 400});
+    return new NextResponse("Not authenticated", { status: 401 });
   }
 
   try {
@@ -59,6 +61,6 @@ export async function GET(req: Request) {
     return NextResponse.json(orders);
   } catch (error) {
     console.error("❌ Order creation failed:", error);
-    return new NextResponse("Failed to fetch orders", { status: 500});
+    return new NextResponse("Failed to fetch orders", { status: 500 });
   }
 }
