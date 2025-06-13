@@ -7,9 +7,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import ShoppingCart from "./ShoppingCart";
-import { authClient } from "@/lib/auth-client";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Image from "next/image";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const dancingScript = Dancing_Script({
   subsets: ["latin"],
@@ -19,9 +19,9 @@ const dancingScript = Dancing_Script({
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [session, setSession] = useState<any>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { data: session, status } = useSession();
+
+  const isAdmin = session?.user?.isAdmin === true;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,57 +31,11 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    setIsMounted(true);
-
-    const fetchSession = async () => {
-      const { data } = await authClient.getSession();
-      setSession(data);
-
-      if (data?.user?.email) {
-        // Spara användaren i databasen
-        try {
-          const res = await fetch("/api/save-user", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: data.user.name,
-              email: data.user.email,
-              image: data.user.image,
-            }),
-          });
-
-          const userData = await res.json();
-          if (userData?.isAdmin === true) {
-            setIsAdmin(true);
-          }
-        } catch (err) {
-          console.error("Kunde inte spara användaren:", err);
-        }
-      }
-    };
-
-    fetchSession();
-  }, []);
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: "github",
-      callbackURL: "/",
-    });
-  };
-
-  const handleSignOut = async () => {
-    await authClient.signOut();
-    setSession(null);
-    setIsAdmin(false);
-  };
-
-  if (!isMounted) return null;
+  if (status === "loading") return null;
 
   return (
     <header
@@ -107,7 +61,7 @@ const Header = () => {
         <nav className="hidden md:flex items-center space-x-8">
           <Link href="/" className="text-foreground/80 hover:text-foreground">Home</Link>
           {isAdmin && (
-            <Link data-cy="admin-link" href="/admin" className="text-foreground/80 hover:text-foreground">Admin</Link>
+            <Link href="/admin" className="text-foreground/80 hover:text-foreground">Admin</Link>
           )}
           <Link href="/not-found" className="text-foreground/80 hover:text-foreground">Contact</Link>
           <Link href="/not-found" className="text-foreground/80 hover:text-foreground">About</Link>
@@ -116,7 +70,7 @@ const Header = () => {
         <div className="flex items-center space-x-4">
           <ShoppingCart />
 
-          {session ? (
+          {session?.user ? (
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <button
@@ -137,10 +91,17 @@ const Header = () => {
                 <DropdownMenu.Content
                   align="end"
                   sideOffset={8}
-                  className="z-50 w-32 bg-white dark:bg-background border rounded-md shadow-lg p-1 text-sm"
+                  className="z-50 w-40 bg-white dark:bg-background border rounded-md shadow-lg p-1 text-sm"
                 >
+                  {isAdmin && (
+                    <DropdownMenu.Item
+                      className="px-3 py-2 text-foreground font-medium cursor-default"
+                    >
+                      👑 Admin
+                    </DropdownMenu.Item>
+                  )}
                   <DropdownMenu.Item
-                    onClick={handleSignOut}
+                    onClick={() => signOut()}
                     className="w-full px-3 py-2 hover:bg-muted text-foreground rounded-md cursor-pointer transition-colors"
                   >
                     Logga ut
@@ -149,7 +110,7 @@ const Header = () => {
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
           ) : (
-            <Button variant="default" onClick={handleSignIn}>
+            <Button variant="default" onClick={() => signIn("github")}>
               Logga in
             </Button>
           )}
