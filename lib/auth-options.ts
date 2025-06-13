@@ -1,10 +1,10 @@
-// lib/auth.ts
+// lib/auth-options.ts
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { AuthOptions } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import { db } from "@/lib/db";
 
-export const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
   providers: [
     GitHubProvider({
@@ -22,3 +22,4 @@ export const authOptions: AuthOptions = {
     },
   },
 };
+export default authOptions;
