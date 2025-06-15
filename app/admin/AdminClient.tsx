@@ -18,10 +18,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Product, products as initialProducts } from "@/data";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+type Product = {
+  id: string;
+  articleNumber: string;
+  title: string;
+  description: string;
+  price: number;
+  image: string;
+  articleColorSize?: string;
+  stock: number;
+};
 
 export default function Admin() {
   const [isLoading, setIsLoading] = useState(true);
@@ -30,49 +40,46 @@ export default function Admin() {
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    let isSubscribed = true;
-
-    const loadProducts = () => {
+    const loadProducts = async () => {
       try {
-        const storedProducts = localStorage.getItem("products");
-        if (storedProducts && isSubscribed) {
-          setProducts(JSON.parse(storedProducts));
-        } else if (isSubscribed) {
-          setProducts(initialProducts);
-          localStorage.setItem("products", JSON.stringify(initialProducts));
-        }
+        const res = await fetch("/api/product");
+        const data = await res.json();
+        setProducts(data);
       } catch (error) {
         console.error("Failed to load products:", error);
-        if (isSubscribed) {
-          setProducts(initialProducts);
-        }
       } finally {
-        if (isSubscribed) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
     loadProducts();
-
-    const handleStorageChange = () => {
-      try {
-        const storedProducts = localStorage.getItem("products");
-        if (storedProducts && isSubscribed) {
-          setProducts(JSON.parse(storedProducts));
-        }
-      } catch (error) {
-        console.error("Failed to parse updated products:", error);
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      isSubscribed = false;
-      window.removeEventListener("storage", handleStorageChange);
-    };
   }, []);
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+
+    try {
+      const res = await fetch(`/api/product/${productToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Delete failed");
+
+      setProducts((prev) =>
+        prev.filter((p) => p.articleNumber !== productToDelete)
+      );
+      setProductToDelete(null);
+    } catch (error) {
+      console.error("Error removing product:", error);
+      alert("Failed to remove product. Please try again.");
+    }
+  };
+
+  const filteredProducts = products.filter(
+    (product) =>
+      product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.articleNumber.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (isLoading) {
     return (
@@ -82,39 +89,15 @@ export default function Admin() {
     );
   }
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.articleNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const confirmDelete = () => {
-    if (!productToDelete) return;
-
-    try {
-      const updatedProducts = products.filter((p) => p.id !== productToDelete);
-      localStorage.setItem("products", JSON.stringify(updatedProducts));
-      setProducts(updatedProducts);
-      setProductToDelete(null);
-      window.dispatchEvent(new Event("storage"));
-    } catch (error) {
-      console.error("Error removing product:", error);
-      alert("Failed to remove product. Please try again.");
-    }
-  };
-
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
       <div className="container px-4 py-8 mx-auto max-w-full">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex space-x-4"></div>
-        </div>
-
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
+
           <TabsContent value="products" className="mt-6">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -149,6 +132,7 @@ export default function Admin() {
                   </div>
                 </div>
               </div>
+
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <div className="min-w-full inline-block align-middle px-4 sm:px-0">
                   <Table>
@@ -158,94 +142,73 @@ export default function Admin() {
                         <TableHead>ID</TableHead>
                         <TableHead>Product Name</TableHead>
                         <TableHead>Price</TableHead>
+                        <TableHead>Stock</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProducts.length > 0 ? (
-                        filteredProducts.map((product) => (
-                          <TableRow key={product.id} data-cy="product">
-                            <TableCell>
-                              <div className="w-12 h-12 relative">
-                                <Image
-                                  src={product.image}
-                                  alt={product.title}
-                                  fill
-                                  className="rounded object-cover"
-                                  sizes="48px"
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell data-cy="product-id">
-                              {product.articleNumber}
-                            </TableCell>
-                            <TableCell
-                              className="font-medium"
-                              data-cy="product-title"
-                            >
-                              {product.title}
-                            </TableCell>
-                            <TableCell data-cy="product-price">
-                              ${product.price.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-right whitespace-nowrap">
-                              <div className="flex justify-end space-x-2">
-                                <Link
-                                  href={`/admin/product/${product.articleNumber}`}
-                                >
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    data-cy="admin-edit-product"
-                                  >
-                                    Edit
-                                  </Button>
-                                </Link>
+                      {filteredProducts.map((product) => (
+                        <TableRow key={product.articleNumber} data-cy="product">
+                          <TableCell>
+                            <div className="w-12 h-12 relative">
+                              <Image
+                                src={product.image}
+                                alt={product.title}
+                                fill
+                                className="rounded object-cover"
+                                sizes="48px"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell data-cy="product-id">
+                            {product.articleNumber}
+                          </TableCell>
+                          <TableCell
+                            className="font-medium"
+                            data-cy="product-title"
+                          >
+                            {product.title}
+                          </TableCell>
+                          <TableCell data-cy="product-price">
+                            ${product.price.toFixed(2)}
+                          </TableCell>
+                          <TableCell data-cy="product-stock">
+                            {product.stock}
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex justify-end space-x-2">
+                              <Link
+                                href={`/admin/product/${product.articleNumber}`}
+                              >
                                 <Button
-                                  variant="destructive"
+                                  variant="outline"
                                   size="sm"
-                                  data-cy="admin-remove-product"
-                                  onClick={() => setProductToDelete(product.id)}
+                                  data-cy="admin-edit-product"
                                 >
-                                  Remove
+                                  Edit
                                 </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10">
-                            {searchTerm ? (
-                              <div>
-                                <p className="text-lg font-medium">
-                                  No matching products found
-                                </p>
-                                <p className="text-muted-foreground">
-                                  Try a different search term
-                                </p>
-                              </div>
-                            ) : (
-                              <div>
-                                <p className="text-lg font-medium">
-                                  No products available
-                                </p>
-                                <Link href="/admin/product/new">
-                                  <Button variant="outline" className="mt-2">
-                                    Add your first product
-                                  </Button>
-                                </Link>
-                              </div>
-                            )}
+                              </Link>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                data-cy="admin-remove-product"
+                                onClick={() =>
+                                  setProductToDelete(product.articleNumber)
+                                }
+                              >
+                                Remove
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
-                      )}
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
               </div>
             </div>
           </TabsContent>
+
           <TabsContent value="settings" className="mt-6">
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-semibold mb-4">Site Settings</h2>
@@ -281,7 +244,6 @@ export default function Admin() {
                 variant="destructive"
                 onClick={confirmDelete}
                 data-cy="confirm-delete-button"
-                style={{ position: "relative", zIndex: 9999 }}
               >
                 Delete
               </Button>
