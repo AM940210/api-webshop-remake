@@ -13,46 +13,23 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<"name" | "price">("name");
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadProducts = () => {
+    const loadProducts = async () => {
       try {
-        const storedProducts = localStorage.getItem("products");
-        if (storedProducts && mounted) {
-          const parsedProducts = JSON.parse(storedProducts);
-          setProducts(parsedProducts);
-        }
-      } catch (error) {
-        console.error("Failed to load products from localStorage:", error);
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
+        const res = await fetch("/api/product");
+        if (!res.ok) throw new Error("Failed to fetch");
 
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === "products" && event.newValue && mounted) {
-        try {
-          const parsedProducts = JSON.parse(event.newValue);
-          setProducts(parsedProducts);
-        } catch (error) {
-          console.error("Failed to parse products from storage event:", error);
-        }
+        const data = await res.json();
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to load products from API:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadProducts();
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      mounted = false;
-      window.removeEventListener("storage", handleStorageChange);
-    };
   }, []);
 
-  // Filtrera och sortera produkter
-  // Make sure Product type has a 'name' property, or replace 'name' with the correct property
   const filteredProducts = products
     .filter((p) => (p.title ?? "").toLowerCase().includes(filter.toLowerCase()))
     .sort((a, b) =>
