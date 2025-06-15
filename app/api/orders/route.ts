@@ -1,3 +1,4 @@
+import { getServerSession } from "better-auth/next-js"
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
@@ -27,6 +28,9 @@ type OrderBody = {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession(auth, req);
+    const userId = session?.user?.id ?? null;
+
     const body: OrderBody = await req.json();
     const { customer, items } = body;
 
@@ -42,38 +46,47 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const order = await db.order.create({
-      data: {
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerAddress: customer.address,
-        customerZipcode: customer.zipcode,
-        customerCity: customer.city,
-        customerPhone: customer.phone,
-        items: {
-          create: items.map((item) => ({
-            title: item.title,
-            description: item.description,
-            price: item.price,
-            quantity: item.quantity,
-            image: item.image,
-            articleNumber: item.articleNumber,
-          })),
-        },
+    // Bygg orderData och lägg till userId om det finns
+    const orderData: any = {
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerAddress: customer.address,
+      customerZipcode: customer.zipcode,
+      customerCity: customer.city,
+      customerPhone: customer.phone,
+      items: {
+        create: items.map((item: any) => ({
+          title: item.title,
+          description: item.description,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          articleNumber: item.articleNumber,
+        })),
       },
+    };
+
+    if (userId) {
+      orderData.userId = userId;
+    }
+
+    const order = await db.order.create({
+      data: orderData,
       include: { items: true },
     });
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error("❌ Order creation failed:", error);
+    console.error(
+      "❌ Order creation failed:",
+      error instanceof Error ? error.message : error
+    );
     return new NextResponse("Failed to create order", { status: 500 });
   }
 }
 
-// Hämta alla ordrar för en kund (GET /api/orders?email=kund@mail.se)
 export async function GET(req: NextRequest) {
-  const session = await auth.api.session(req);
+  const session = await getServerSession(auth, req);
   const email = session?.user?.email;
 
   if (!email) {

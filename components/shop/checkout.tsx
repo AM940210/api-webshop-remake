@@ -70,7 +70,7 @@ export default function Checkout() {
             description: item.description,
             price: item.price,
             quantity: item.quantity,
-            image: item.image,
+            image: item.image ?? "",
             articleNumber: item.articleNumber,
           })),
         }),
