@@ -30,7 +30,10 @@ model Order {
   customerCity    String
   customerPhone   String
 
-  items OrderItem[]
+  userId          String? // Nytt fält som refererar till User
+  user   User? @relation(fields: [userId], references: [id]) // Motsatt relation
+
+  items  OrderItem[]
 }
 
 model OrderItem {
@@ -40,13 +43,23 @@ model OrderItem {
   description   String
   price         Float
   quantity      Int
-  image         String
+  image         String?
   articleNumber String
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model User {
+ 10-kundfunktioner
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  orders    Order[] // Relationen från User till Order
+}
+
   id             String   @id @default(cuid())
   email          String   @unique
   name           String?
@@ -92,3 +105,4 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+ master
