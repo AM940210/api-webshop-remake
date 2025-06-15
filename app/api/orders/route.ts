@@ -1,4 +1,3 @@
-import { getServerSession } from "better-auth/next-js"
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
@@ -28,10 +27,11 @@ type OrderBody = {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(auth, req);
+    // Hämta sesseion via auth.api.getSession
+    const session = await auth.api.getSession(req);
     const userId = session?.user?.id ?? null;
 
-    const body: OrderBody = await req.json();
+    const body = await req.json();
     const { customer, items } = body;
 
     if (
@@ -86,7 +86,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(auth, req);
+  // Hämta sessionen vai auth.api.getSession
+  const session = await auth.api.getSession( req );
   const email = session?.user?.email;
 
   if (!email) {
