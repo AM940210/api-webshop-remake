@@ -1,6 +1,6 @@
 // lib/auth.ts
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { AuthOptions } from "next-auth";
+import { AuthOptions, getServerSession } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 import { db } from "@/lib/db";
 
@@ -22,3 +22,8 @@ export const authOptions: AuthOptions = {
     },
   },
 };
+
+//Hjälpfunktion för att hämta session i API-routes/server actions
+export async function getAuthSession() {
+  return getServerSession(authOptions);
+}

@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth";
+import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getServerSession } from "@/lib/session/get-server-session";
 import { NextRequest, NextResponse } from "next/server";
 
 type OrderItem = {
@@ -28,7 +29,7 @@ type OrderBody = {
 export async function POST(req: NextRequest) {
   try {
     // Hämta sesseion via auth.api.getSession
-    const session = await auth.api.getSession(req);
+    const session = await getAuthSession();
     const userId = session?.user?.id ?? null;
 
     const body = await req.json();
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   // Hämta sessionen vai auth.api.getSession
-  const session = await auth.api.getSession( req );
+  const session = await getAuthSession();
   const email = session?.user?.email;
 
   if (!email) {
