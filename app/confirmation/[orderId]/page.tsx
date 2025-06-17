@@ -3,16 +3,16 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import React from "react";
 
-export default async function Confirmation({
+export default async function Page({
   params,
 }: {
   params: { orderId: string };
 }) {
-  const { orderId } = params; // ✅ Rätt typ
+  const { orderId } = params;
 
   const order = await db.order.findUnique({
     where: { id: orderId },
-    include: { items: true }, // ✅ Få med produkter
+    include: { items: true },
   });
 
   if (!order) return <main>404 - Order not found</main>;
@@ -22,7 +22,7 @@ export default async function Confirmation({
       <div className="bg-[rgb(255,251,230)] shadow-lg rounded-lg p-6 max-w-screen-lg text-center mb-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-4">Confirmation</h1>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">
-          ✅ Thank you for shopping with us!
+          Thank you for shopping with us!
         </h2>
 
         <div className="text-left grid grid-cols-2 grid-rows-3 gap-2 border-2 border-black rounded-md p-2">
@@ -44,7 +44,7 @@ export default async function Confirmation({
             <React.Fragment key={index}>
               <div className="flex items-center gap-2">
                 <img
-                  src={item.image}
+                  src={item.image ?? "/fallback.jpg"}
                   alt={item.title}
                   className="w-12 h-12 object-cover rounded"
                 />

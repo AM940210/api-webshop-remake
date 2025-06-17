@@ -19,11 +19,13 @@ export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientProviders>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-        </ClientProviders>
+        <main>
+          <ClientProviders>
+            <Header />
+            {children}
+            <Footer />
+          </ClientProviders>
+        </main>
       </body>
     </html>
   );

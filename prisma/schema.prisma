@@ -21,8 +21,8 @@ model Product {
 }
 
 model Order {
-  id              String   @id @default(cuid())
-  createdAt       DateTime @default(now())
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
   customerName    String
   customerEmail   String
   customerAddress String
@@ -30,32 +30,37 @@ model Order {
   customerCity    String
   customerPhone   String
 
-  items OrderItem[]
+  status          String      @default("pending")
+  userId          String?
+  user            User?       @relation(fields: [userId], references: [id])
+  items           OrderItem[]
 }
 
+
 model OrderItem {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   orderId       String
   title         String
   description   String
   price         Float
   quantity      Int
-  image         String
+  image         String?
   articleNumber String
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  name           String?
-  image          String?
-  isAdmin        Boolean  @default(false)
-  emailVerified  DateTime?
-
-  accounts       Account[]
-  sessions       Session[]
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  image           String?
+  isAdmin         Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  emailVerified   DateTime?
+  orders          Order[]
+  Account         Account[]
+  Session         Session[]
 }
 
 
