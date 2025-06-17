@@ -85,12 +85,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
             >
               Buy
             </AddToCartButton>
-            <Button
-              asChild
-              className="flex items-center justify-center px-4 py-1 bg-pink-400 hover:bg-pink-500 text-black rounded-full"
-            >
-              <Link href={`/product/${Product.id}`}>Detail</Link>
-            </Button>
           </div>
         </div>
       </CardOverlay>

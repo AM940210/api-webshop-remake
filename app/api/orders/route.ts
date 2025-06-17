@@ -74,6 +74,18 @@ export async function POST(req: NextRequest) {
       include: { items: true },
     });
 
+    for (const item of items) {
+      if (!item.articleNumber) continue;
+      await db.product.update({
+        where: { articleNumber: item.articleNumber },
+        data: {
+          stock: {
+            decrement: item.quantity,
+          },
+        },
+      });
+    }
+
     return NextResponse.json(order);
   } catch (error) {
     console.error(
@@ -83,6 +95,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Failed to create order", { status: 500 });
   }
 }
+
 
 export async function GET(req: NextRequest) {
   const session = await getAuthSession();
