@@ -15,7 +15,7 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/orders")
+        fetch("/api/orders", { credentials: "include" })
         .then((res) => {
             if (!res.ok) throw new Error("Not authenticated");
             return res.json();
