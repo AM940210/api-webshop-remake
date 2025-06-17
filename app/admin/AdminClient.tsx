@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,10 +18,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Order } from "../../lib/order";
 
 type Product = {
   id: string;
@@ -36,6 +43,7 @@ type Product = {
 export default function Admin() {
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
@@ -52,7 +60,18 @@ export default function Admin() {
       }
     };
 
+    const loadOrders = async () => {
+      try {
+        const res = await fetch("/api/orders");
+        const data = await res.json();
+        setOrders(data);
+      } catch (error) {
+        console.error("Failed to load orders:", error);
+      }
+    };
+
     loadProducts();
+    loadOrders();
   }, []);
 
   const confirmDelete = async () => {
@@ -75,6 +94,21 @@ export default function Admin() {
     }
   };
 
+  const handleMarkAsShipped = async (orderId: string) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/ship`, {
+        method: "PATCH",
+      });
+      if (!res.ok) throw new Error("Failed to mark as shipped");
+
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: "shipped" } : o))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const filteredProducts = products.filter(
     (product) =>
       product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,49 +124,48 @@ export default function Admin() {
   }
 
   return (
-    <main className="min-h-screen bg-background overflow-x-hidden">
+    <main className="min-h-screen bg-background overflow-x-hidden pt-24">
       <div className="container px-4 py-8 mx-auto max-w-full">
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <TabsList className="flex space-x-2">
+              <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="products" className="mt-6">
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 className="text-xl font-semibold">Product Management</h2>
-                <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 w-full sm:w-auto">
-                  <Link href="/admin/product/new">
-                    <Button
-                      variant="default"
-                      data-cy="admin-add-product"
-                      className="w-full sm:w-auto"
-                    >
-                      Add Product
-                    </Button>
-                  </Link>
-                  <div className="relative w-full sm:w-64">
-                    <Input
-                      type="text"
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full"
-                    />
-                    {searchTerm && (
-                      <Button
-                        variant="ghost"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                        onClick={() => setSearchTerm("")}
-                      >
-                        ✕
-                      </Button>
-                    )}
-                  </div>
-                </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 w-full sm:w-auto">
+              <Link href="/admin/product/new">
+                <Button
+                  variant="default"
+                  data-cy="admin-add-product"
+                  className="w-full sm:w-auto"
+                >
+                  Add Product
+                </Button>
+              </Link>
+              <div className="relative w-full sm:w-64">
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+                {searchTerm && (
+                  <Button
+                    variant="ghost"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={() => setSearchTerm("")}
+                  >
+                    ✕
+                  </Button>
+                )}
               </div>
+            </div>
+          </div>
 
+          <TabsContent value="products">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <div className="min-w-full inline-block align-middle px-4 sm:px-0">
                   <Table>
@@ -209,10 +242,41 @@ export default function Admin() {
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-6">
+          <TabsContent value="orders">
             <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4">Site Settings</h2>
-              <p className="text-gray-500">Settings panel coming soon</p>
+              {orders.length === 0 ? (
+                <p className="text-gray-500">No orders found.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>{order.id}</TableCell>
+                        <TableCell>{order.customerName}</TableCell>
+                        <TableCell>{order.status}</TableCell>
+                        <TableCell>
+                          {order.status !== "shipped" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleMarkAsShipped(order.id)}
+                            >
+                              Mark as shipped
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </TabsContent>
         </Tabs>
