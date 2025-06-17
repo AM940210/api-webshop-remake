@@ -1,30 +1,32 @@
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getServerSession } from "@/lib/session/get-server-session";
+import { Description } from "@radix-ui/react-dialog";
+import Email from "next-auth/providers/email";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod"
 
-type OrderItem = {
-  title: string;
-  description: string;
-  price: number;
-  quantity: number;
-  image?: string;
-  articleNumber?: string;
-};
-
-type Customer = {
-  name: string;
-  email: string;
-  address: string;
-  zipcode: string;
-  city: string;
-  phone: string;
-};
-
-type OrderBody = {
-  customer: Customer;
-  items: OrderItem[];
-};
+// Zod-schema för ordervalidering
+const orderSchema = z.object({
+  customer: z.object({
+    name: z.string().min(2, "Name must be att least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    address: z.string().min(5, "Address must be att least 5 characters"),
+    zipcode: z.string().regex(/^\d{5}$/, "Postal code must be exactly 5 digits"),
+    city: z.string().min(2, "City must be att least 2 characters"),
+    phone: z.string().min(6, "Phone number must be at least 6 characters"),
+  }),
+  items: z.array(
+    z.object({
+      title: z.string().min(1),
+      description: z.string().min(1),
+      price: z.number().positive(),
+      quantity: z.number().int().positive(),
+      image: z.string().optional(),
+      articleNumber: z.string().optional(),
+    })
+  ).min(1, "At least on item is required"),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,19 +34,16 @@ export async function POST(req: NextRequest) {
     const userId = session?.user?.id ?? null;
 
     const body = await req.json();
-    const { customer, items } = body;
+    const parsed = orderSchema.safeParse(body);
 
-    if (
-      !customer ||
-      !customer.name ||
-      !customer.email ||
-      !items ||
-      items.length === 0
-    ) {
-      return new NextResponse("Missing customer or items data", {
-        status: 400,
-      });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid data", details: parsed.error.errors },
+        { status: 400}
+      );
     }
+
+    const { customer, items } = parsed.data;
 
     const orderData: any = {
       customerName: customer.name,
