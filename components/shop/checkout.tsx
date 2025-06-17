@@ -51,7 +51,7 @@ export default function Checkout() {
 
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
-      console.log("✅ Form valid, items:", items); // Debug
+      console.log("Form valid, items:", items); // Debug
 
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -82,7 +82,7 @@ export default function Checkout() {
       }
 
       const order = await res.json();
-      console.log("✅ Order created:", order);
+      console.log("Order created:", order);
 
       setIsSubmitted(true);
       clearCart(); // Töm varukorgen

@@ -66,12 +66,12 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-/// ✅ Här skapar vi CardImage
+/// Här skapar vi CardImage
 const CardImage = ({ src, alt }: { src: string; alt: string }) => (
   <img src={src} alt={alt} className="object-cover w-full h-full absolute inset-0" />
 );
 
-/// ✅ Och CardOverlay
+/// Och CardOverlay
 const CardOverlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
@@ -86,5 +86,5 @@ const CardOverlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
 );
 CardOverlay.displayName = "CardOverlay";
 
-// ✅ Exportera allt
+// Exportera allt
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, CardImage, CardOverlay };

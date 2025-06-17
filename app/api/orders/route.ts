@@ -28,7 +28,6 @@ type OrderBody = {
 
 export async function POST(req: NextRequest) {
   try {
-    // Hämta sesseion via auth.api.getSession
     const session = await getAuthSession();
     const userId = session?.user?.id ?? null;
 
@@ -47,7 +46,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Bygg orderData och lägg till userId om det finns
     const orderData: any = {
       customerName: customer.name,
       customerEmail: customer.email,
@@ -79,7 +77,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(order);
   } catch (error) {
     console.error(
-      "❌ Order creation failed:",
+      "Order creation failed:",
       error instanceof Error ? error.message : error
     );
     return new NextResponse("Failed to create order", { status: 500 });
@@ -87,23 +85,22 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // Hämta sessionen vai auth.api.getSession
   const session = await getAuthSession();
-  const email = session?.user?.email;
+  const userId = session?.user?.id;
 
-  if (!email) {
+  if (!userId) {
     return new NextResponse("Not authenticated", { status: 401 });
   }
 
   try {
     const orders = await db.order.findMany({
-      where: { customerEmail: email },
+      where: { userId },
       include: { items: true },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(orders);
   } catch (error) {
-    console.error("❌ Order creation failed:", error);
+    console.error("Failed to fetch orders:", error);
     return new NextResponse("Failed to fetch orders", { status: 500 });
   }
 }

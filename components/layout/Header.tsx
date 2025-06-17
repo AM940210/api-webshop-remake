@@ -59,12 +59,29 @@ const Header = () => {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-foreground/80 hover:text-foreground">Home</Link>
+          <Link href="/" className="text-foreground/80 hover:text-foreground">
+            Home
+          </Link>
           {isAdmin && (
-            <Link href="/admin" className="text-foreground/80 hover:text-foreground">Admin</Link>
+            <Link
+              href="/admin"
+              className="text-foreground/80 hover:text-foreground"
+            >
+              Admin
+            </Link>
           )}
-          <Link href="/not-found" className="text-foreground/80 hover:text-foreground">Contact</Link>
-          <Link href="/not-found" className="text-foreground/80 hover:text-foreground">About</Link>
+          <Link
+            href="/not-found"
+            className="text-foreground/80 hover:text-foreground"
+          >
+            Contact
+          </Link>
+          <Link
+            href="/not-found"
+            className="text-foreground/80 hover:text-foreground"
+          >
+            About
+          </Link>
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -94,12 +111,17 @@ const Header = () => {
                   className="z-50 w-40 bg-white dark:bg-background border rounded-md shadow-lg p-1 text-sm"
                 >
                   {isAdmin && (
-                    <DropdownMenu.Item
-                      className="px-3 py-2 text-foreground font-medium cursor-default"
-                    >
+                    <DropdownMenu.Item className="px-3 py-2 text-foreground font-medium cursor-default">
                       👑 Admin
                     </DropdownMenu.Item>
                   )}
+                  <DropdownMenu.Item className="w-full px-3 py-2 hover:bg-muted text-foreground rounded-md cursor-pointer transition-colors">
+                    <Link
+                      href="/orders"
+                    >
+                      Mina ordrar
+                    </Link>
+                  </DropdownMenu.Item>
                   <DropdownMenu.Item
                     onClick={() => signOut()}
                     className="w-full px-3 py-2 hover:bg-muted text-foreground rounded-md cursor-pointer transition-colors"
@@ -121,7 +143,11 @@ const Header = () => {
             className="md:hidden"
             onClick={toggleMobileMenu}
           >
-            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </div>
@@ -129,12 +155,36 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-background/95 backdrop-blur-lg shadow-lg animate-fade-in">
           <nav className="container mx-auto px-4 py-6 flex flex-col space-y-4">
-            <Link href="/" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+            <Link
+              href="/"
+              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
             {isAdmin && (
-              <Link href="/admin" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Admin</Link>
+              <Link
+                href="/admin"
+                className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Admin
+              </Link>
             )}
-            <Link href="/not-found" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
-            <Link href="/not-found" className="text-lg py-2 px-4 hover:bg-secondary rounded-md" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
+            <Link
+              href="/not-found"
+              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Contact
+            </Link>
+            <Link
+              href="/not-found"
+              className="text-lg py-2 px-4 hover:bg-secondary rounded-md"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              About
+            </Link>
           </nav>
         </div>
       )}
