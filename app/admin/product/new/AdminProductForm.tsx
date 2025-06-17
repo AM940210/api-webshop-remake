@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Product } from "@/data";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,10 +14,17 @@ const productSchema = z.object({
   price: z
     .string()
     .refine((val) => Number(val) > 0, "Price must be greater than 0"),
+  stock: z
+    .string()
+    .refine((val) => {
+      const parsed = parseInt(val);
+      return !isNaN(parsed) && parsed >= 0;
+    }, "Stock must be a valid non-negative number"),
   image: z.string().refine((val) => {
     return z.string().url().safeParse(val).success;
   }, "Must be a valid URL"),
 });
+
 
 type FormErrors = {
   [key: string]: string[];
@@ -34,6 +40,7 @@ export default function AdminProductForm() {
     description: "",
     price: "",
     image: "",
+    stock: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +48,7 @@ export default function AdminProductForm() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleButtonClick = (e: React.MouseEvent) => {
+  const handleButtonClick = () => {
     setIsButtonActive(true);
   };
 
@@ -53,28 +60,13 @@ export default function AdminProductForm() {
     try {
       const validatedData = productSchema.parse(formData);
 
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        articleNumber: `A${Math.floor(1000 + Math.random() * 9000)}`,
-        title: validatedData.title,
-        description: validatedData.description,
-        price: Number(validatedData.price),
-        image: validatedData.image,
-        articleColorSize: "",
-      };
+      const res = await fetch("/api/product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validatedData),
+      });
 
-      let existingProducts: Product[] = [];
-      const storedProducts = localStorage.getItem("products");
-
-      if (storedProducts) {
-        existingProducts = JSON.parse(storedProducts);
-      }
-
-      const updatedProducts = [...existingProducts, newProduct];
-
-      localStorage.setItem("products", JSON.stringify(updatedProducts));
-
-      window.dispatchEvent(new Event("storage"));
+      if (!res.ok) throw new Error("API error");
 
       router.push("/admin");
       router.refresh();
@@ -156,6 +148,28 @@ export default function AdminProductForm() {
             key={error}
             className="text-red-500 text-sm mt-1"
             data-cy="product-price-error"
+          >
+            {error}
+          </p>
+        ))}
+      </div>
+
+      <div>
+        <Label htmlFor="stock">Stock</Label>
+        <Input
+          id="stock"
+          name="stock"
+          type="number"
+          value={formData.stock}
+          onChange={handleChange}
+          className={errors.stock ? "border-red-500" : ""}
+          data-cy="product-stock"
+        />
+        {errors.stock?.map((error) => (
+          <p
+            key={error}
+            className="text-red-500 text-sm mt-1"
+            data-cy="product-stock-error"
           >
             {error}
           </p>

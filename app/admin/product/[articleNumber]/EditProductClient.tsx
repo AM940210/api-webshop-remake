@@ -14,9 +14,18 @@ const productSchema = z.object({
   price: z
     .string()
     .refine((val) => Number(val) > 0, "Price must be greater than 0"),
-  image: z.string().refine((val) => {
-    return z.string().url().safeParse(val).success;
-  }, "Must be a valid URL"),
+  image: z
+    .string()
+    .refine(
+      (val) => z.string().url().safeParse(val).success,
+      "Must be a valid URL"
+    ),
+  stock: z
+    .string()
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) >= 0,
+      "Stock must be a number"
+    ),
 });
 
 export default function EditProductClient({
@@ -30,93 +39,58 @@ export default function EditProductClient({
     description: "",
     price: "",
     image: "",
+    stock: "",
   });
 
-  const [errors, setErrors] = useState<{
-    title?: string;
-    description?: string;
-    price?: string;
-    image?: string;
-  }>({});
-
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const storedProducts = localStorage.getItem("products");
-    if (storedProducts) {
-      const products = JSON.parse(storedProducts);
-      const product = products.find(
-        (p: any) => p.articleNumber === articleNumber
-      );
-
-      if (product) {
-        setFormData({
-          title: product.title,
-          description: product.description,
-          price: product.price.toString(),
-          image: product.image,
-        });
-      } else {
-        console.error(`Product with articleNumber ${articleNumber} not found`);
+    const fetchProduct = async () => {
+      const res = await fetch(`/api/product/${articleNumber}`);
+      if (!res.ok) {
         router.push("/admin");
+        return;
       }
-    }
+
+      const product = await res.json();
+      setFormData({
+        title: product.title,
+        description: product.description,
+        price: product.price.toString(),
+        image: product.image,
+        stock: product.stock?.toString() ?? "0",
+      });
+    };
+
+    fetchProduct();
   }, [articleNumber, router]);
 
-  const validateForm = () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      productSchema.parse(formData);
-      setErrors({});
-      return true;
+      const validated = productSchema.parse(formData);
+      const res = await fetch(`/api/product/${articleNumber}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validated),
+      });
+
+      if (!res.ok) throw new Error("Update failed");
+
+      router.push("/admin");
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
-            newErrors[err.path[0] as string] = err.message;
-          }
+          if (err.path[0]) newErrors[err.path[0] as string] = err.message;
         });
         setErrors(newErrors);
-        console.log("Validation errors:", newErrors);
+      } else {
+        alert("Misslyckades att spara ändringar");
       }
-      return false;
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    console.log("Submitting form with data:", formData);
-
-    if (!validateForm()) {
-      console.log("Form validation failed, errors:", errors);
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      const storedProducts = JSON.parse(
-        localStorage.getItem("products") || "[]"
-      );
-      const updatedProducts = storedProducts.map((product: any) => {
-        if (product.articleNumber === articleNumber) {
-          return {
-            ...product,
-            title: formData.title,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            image: formData.image,
-          };
-        }
-        return product;
-      });
-
-      localStorage.setItem("products", JSON.stringify(updatedProducts));
-      window.dispatchEvent(new Event("storage"));
-      router.push("/admin");
-    } catch (error) {
-      console.error("Error updating product:", error);
-      alert("Failed to update product. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -138,9 +112,9 @@ export default function EditProductClient({
               name="title"
               data-cy="product-title"
               value={formData.title}
-              onChange={(e) => {
-                setFormData({ ...formData, title: e.target.value });
-              }}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
             />
             {errors.title && (
               <p
@@ -159,9 +133,9 @@ export default function EditProductClient({
               name="description"
               data-cy="product-description"
               value={formData.description}
-              onChange={(e) => {
-                setFormData({ ...formData, description: e.target.value });
-              }}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
             />
             {errors.description && (
               <p
@@ -177,13 +151,14 @@ export default function EditProductClient({
             <Label htmlFor="price">Price</Label>
             <Input
               id="price"
-              type="number"
-              data-cy="product-price"
               name="price"
+              type="number"
+              step="0.01"
+              data-cy="product-price"
               value={formData.price}
-              onChange={(e) => {
-                setFormData({ ...formData, price: e.target.value });
-              }}
+              onChange={(e) =>
+                setFormData({ ...formData, price: e.target.value })
+              }
             />
             {errors.price && (
               <p
@@ -196,15 +171,37 @@ export default function EditProductClient({
           </div>
 
           <div>
+            <Label htmlFor="stock">Stock</Label>
+            <Input
+              id="stock"
+              name="stock"
+              type="number"
+              data-cy="product-stock"
+              value={formData.stock}
+              onChange={(e) =>
+                setFormData({ ...formData, stock: e.target.value })
+              }
+            />
+            {errors.stock && (
+              <p
+                className="text-sm text-red-500 mt-1"
+                data-cy="product-stock-error"
+              >
+                {errors.stock}
+              </p>
+            )}
+          </div>
+
+          <div>
             <Label htmlFor="image">Image URL</Label>
             <Input
               id="image"
               name="image"
               data-cy="product-image"
               value={formData.image}
-              onChange={(e) => {
-                setFormData({ ...formData, image: e.target.value });
-              }}
+              onChange={(e) =>
+                setFormData({ ...formData, image: e.target.value })
+              }
             />
             {errors.image && (
               <p
@@ -217,12 +214,7 @@ export default function EditProductClient({
           </div>
 
           <div className="flex space-x-4">
-            <Button
-              type="submit"
-              variant="outline"
-              data-cy="admin-add-product"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" variant="outline" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
             <Link href="/admin">
